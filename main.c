@@ -26,7 +26,7 @@ void recordUser(String60 *stringsName, int *age, float *weight, float *height, i
         printf("\nPlease Input Your Weight: ");
         scanf("%f", &weight[*users]);
 
-        printf("\nPlease Input Your Height: ");
+        printf("\nPlease Input Your Height in Centimeters: ");
         scanf("%f", &height[*users]);
     
         (*users)++;
@@ -45,6 +45,31 @@ void init(String60 *stringsName, int *age, float *weight, float *height, int *us
     }
     *users = 0; 
 }
+
+void computeBMI(String60 *stringsName, float *weight, float *height, int users) {
+    if (users == 0) {
+        printf("No users registered yet.\n");
+        return;
+    }
+
+    for (int i = 0; i < users; i++) {
+        float height_m = height[i] / 100.0;  // Convert cm to meters
+        float bmi = weight[i] / (height_m * height_m);
+
+        printf("\nUser: %s\n", stringsName[i]);
+        printf("BMI: %.2f - ", bmi);
+
+        if (bmi < 18.5)
+            printf("Underweight\n");
+        else if (bmi < 24.9)
+            printf("Normal weight\n");
+        else if (bmi < 29.9)
+            printf("Overweight\n");
+        else
+            printf("Obese\n");
+    }
+}
+
 
 int mainMenu(){
     int temp = 0;
@@ -76,6 +101,7 @@ void mainMenuOp(String60 *stringsName, int *age, float *weight, float *height, i
                 recordUser(stringsName, age, weight, height, users);
                 break;
             case 3:
+            	computeBMI(stringsName, weight, height, *users);
                 //Check User BMI
                 break;
             case 4: 
