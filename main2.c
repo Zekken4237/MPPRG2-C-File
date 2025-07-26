@@ -24,6 +24,7 @@ typedef struct {
     float weight, height;
     char gender[10];  // NEW: gender
     char water[20], vegetables[20], meat[20], fish[20], exercise[100];
+    int sleep_hours;
 } UserData;
 
 typedef struct {
@@ -137,6 +138,12 @@ void read_user_file(const char *username, UserData *data) {
     }
 }
 
+void pause_screen() {
+    printf("\nPress Enter to continue...");
+    while (getchar() != '\n'); // clear input buffer
+    getchar(); // wait for enter
+}
+
 void view_records(const UserData *data) {
     printf("\n--- Health Records ---\n");
     printf("Age: %d\nWeight: %.2f kg\nHeight: %.2f m\nGender: %s\nWater: %s\nVegetables: %s\nMeat: %s\nFish: %s\nExercise: %s\n",
@@ -147,22 +154,58 @@ void view_records(const UserData *data) {
 void bmi_suggestions(const UserData *data) {
     if (data->height <= 0) {
         printf("\nBMI cannot be calculated. Height not set.\n");
-        return;
-    }
-    float bmi = data->weight / (data->height * data->height);
-    printf("\n--- BMI Analysis ---\n");
-    printf("Your BMI: %.2f\n", bmi);
-    if (bmi < 18.5f) printf("Category: Underweight.\n");
-    else if (bmi < 25.0f) printf("Category: Normal.\n");
-    else if (bmi < 30.0f) printf("Category: Overweight.\n");
-    else printf("Category: Obese.\n");
+    } else {
+        float bmi = data->weight / (data->height * data->height);
+        printf("\n--- BMI Analysis ---\n");
+        printf("Your BMI: %.2f\n", bmi);
+        if (bmi < 18.5f) printf("Category: Underweight.\n");
+        else if (bmi < 25.0f) printf("Category: Normal.\n");
+        else if (bmi < 30.0f) printf("Category: Overweight.\n");
+        else printf("Category: Obese.\n");
 
-    if (strcmp(data->gender, "male") == 0) {
-        printf("Tip: Consider prioritizing lean protein and strength training.\n");
-    } else if (strcmp(data->gender, "female") == 0) {
-        printf("Tip: Balance cardio with strength training and monitor iron/calcium intake.\n");
+        if (strcmp(data->gender, "male") == 0) {
+            printf("Tip: Consider prioritizing lean protein and strength training.\n");
+        } else if (strcmp(data->gender, "female") == 0) {
+            printf("Tip: Balance cardio with strength training and monitor iron/calcium intake.\n");
+        }
     }
+
+    printf("\nPress Enter to continue...");
+    while (getchar() != '\n');  
+    getchar();                  // wait for user to press enter
 }
+
+void sleep_recommendations() {
+    int hours;
+    printf("Enter how many hours you slept last night: ");
+    scanf("%d", &hours);
+
+    printf("\n--- Sleep Recommendations ---\n");
+    printf("You reported %d hours of sleep last night.\n", hours);
+
+    if (hours < 4) {
+        printf("Very low sleep duration. Specialists recommend at least 7-9 hours.\n");
+        printf("Deep sleep is likely insufficient — affecting memory and recovery.\n");
+    } else if (hours < 6) {
+        printf("Below recommended amount. You may feel fatigue or reduced focus.\n");
+        printf("Typically, 1.5-2 hours of deep sleep occur in this range, but it's suboptimal.\n");
+    } else if (hours >= 6 && hours < 8) {
+        printf("Fair sleep duration. Most people will get 1.5–2.5 hours of deep sleep.\n");
+        printf("Aim for 7-9 hours for full physical and mental recovery.\n");
+    } else if (hours >= 8 && hours <= 10) {
+        printf("Optimal sleep duration!\n");
+        printf("Sleep specialists recommend around 3.1 hours of deep sleep per night.\n");
+        printf("You likely got sufficient REM and deep sleep stages.\n");
+    } else {
+        printf("Oversleeping may indicate poor sleep quality or underlying issues.\n");
+        printf("Balance is key - 7 to 9 hours is the sweet spot for most adults.\n");
+    }
+
+    printf("\nPress Enter to continue...");
+    while (getchar() != '\n'); 
+    getchar(); // pause
+}
+
 
 void health_suggestions(const UserData *data) {
     printf("\n--- Health Suggestions ---\n");
@@ -174,6 +217,9 @@ void health_suggestions(const UserData *data) {
         printf("- Add daily exercise.\n");
     bmi_suggestions(data);
 }
+
+
+
 
 void update_user_info(const char *username, UserData *data) {
     int newAge;
@@ -199,6 +245,7 @@ void update_user_info(const char *username, UserData *data) {
 
     write_user_file(username, data);
     printf("Personal info updated.\n");
+    pause_screen();
 }
 
 void add_health_records(const char *username, UserData *data) {
@@ -329,6 +376,31 @@ void exit_program() {
     printf("Log saved. Exiting...\n");
 }
 
+void change_user_password(const char *username) {
+    char old_pass[50], new_pass[50];
+    int idx = find_user(state.users, (char *)username, 0, state.user_count);
+    if (idx < 0) {
+        printf("User not found.\n");
+        return;
+    }
+
+    printf("Enter current password: ");
+    scanf(" %49s", old_pass);
+
+    if (strcmp(old_pass, state.users[idx].password) != 0) {
+        printf("Incorrect password.\n");
+        return;
+    }
+
+    printf("Enter new password: ");
+    scanf(" %49s", new_pass);
+
+    strcpy(state.users[idx].password, new_pass);
+    save_admin_file();  // save updated user data to file
+    printf("Password successfully updated.\n");
+}
+
+=
 void user_menu(char *username) {
     UserData data;
     read_user_file(username, &data);
@@ -337,7 +409,7 @@ void user_menu(char *username) {
         clrscr();
         printf("\nUser Menu:\n"
                "a) View Records\nb) Update Personal Information\nc) Add / Update Daily Records\n"
-               "d) Health Tips\ne) BMI\nf) Exit\n> ");
+               "d) Health Tips\ne) BMI\nf) Sleep Recommendations\ng) Change Password\nh) Logout\n> ");
         scanf(" %c", &choice);
         clrscr();
         if (choice == 'a') view_records(&data);
@@ -345,7 +417,9 @@ void user_menu(char *username) {
         else if (choice == 'c') add_health_records(username, &data);
         else if (choice == 'd') health_suggestions(&data);
         else if (choice == 'e') bmi_suggestions(&data);
-        else if (choice == 'f') { exit_program(); return; }
+        else if (choice == 'f') sleep_recommendations(&data);
+        else if (choice == 'g'){ change_user_password(username); pause_screen(); }
+        else if (choice == 'h') { exit_program(); return; }
     }
 }
 
@@ -380,16 +454,46 @@ void register_new_user(const char *username) {
 }
 
 void handle_user_login() {
-    char username[50], password[50];
-    printf("Enter username: ");
-    scanf("%49s", username);
-    int idx = find_user(state.users, username, 0, state.user_count);
-    if (idx < 0) {
-        register_new_user(username);
+   char username[50], password[50];
+    int idx;
+
+    while (1) {
+        printf("Enter username (or type 'back' to return to main menu): ");
+        scanf("%49s", username);
+
+        if (strcmp(username, "back") == 0) {
+            return;  // back to main menu
+        }
+
         idx = find_user(state.users, username, 0, state.user_count);
+        if (idx < 0) {
+            char choice;
+            printf("User '%s' not found.\n", username);
+            printf("1) Create new user\n2) Go back to main menu\nEnter choice: ");
+            scanf(" %c", &choice);
+
+            if (choice == '1') {
+                register_new_user(username);
+                idx = find_user(state.users, username, 0, state.user_count);
+                if (idx < 0) {
+                    printf("Failed to register user.\n");
+                    return;
+                }
+                break;  // password prompt
+            } else if (choice == '2') {
+                return;  //  main menu
+            } else {
+                printf("Invalid choice. Returning to main menu.\n");
+                return;
+            }
+        } else {
+            break;  
+        }
     }
+
     printf("Enter password: ");
     scanf("%49s", password);
+
     if (idx >= 0 && strcmp(password, state.users[idx].password) == 0) {
         if (log_count < MAX_LOG_ENTRIES) {
             strcpy(logs[log_count].username, username);
